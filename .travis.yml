@@ -1,0 +1,5 @@
+language: objective-c
+xcode_project: OCLog.xcodeproj # path to your xcodeproj folder
+xcode_scheme: OCLog
+osx_image: xcode8.3
+script: xcodebuild test -scheme OCLog -destination name="iPhone 6" -configuration Debug
