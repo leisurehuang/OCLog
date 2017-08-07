@@ -13,32 +13,118 @@
 static OCRichLogLevel LogLevel = LOGLEVELD;
 
 
-
 void uncaughtExceptionHandler(NSException *exception) {
     [OCRichLog logCrash:exception];
 }
 
+// define a time the log X days before  will be deleted
+const NSInteger k_preDaysToDelLog = 3;
 
-static NSString *logFilePath = nil;
-static NSString *crateFileDay = nil;
-static NSString *logDic = nil;
-static NSString *crashDic = nil;
-static BOOL isDebugModel = YES;
-
-//定义删除几天前的日志
-const int k_preDaysToDelLog = 3;
+static OCRichLog *singleInstance = nil;
 
 @interface OCRichLog ()
-
-+ (void)logvLevel:(OCRichLogLevel)level Format:(NSString *)format VaList:(va_list)args;
-
-+ (NSString *)stringFromLogLevel:(OCRichLogLevel)logLevel;
-
-+ (NSString *)logFormatPrefix:(OCRichLogLevel)logLevel;
+@property(nonatomic, strong) NSString *logFilePath;
+@property(nonatomic, strong) NSString *crateFileDay;
+@property(nonatomic, strong) NSString *logDirectory;
+@property(nonatomic, strong) NSString *crashDirectory;
+@property(nonatomic, assign) BOOL isDebugModel;
+@property(nonatomic, strong) NSDateFormatter *dateFormatter;
+@property(nonatomic, strong) NSDateFormatter *timeFormatter;
 
 @end
 
 @implementation OCRichLog
+
++ (void)logInitial {
+    OCRichLog *instance = [OCRichLog shareInstance];
+    [instance updateLogFile];
+    [instance deleteExpiredLog];
+}
+
++ (instancetype)shareInstance {
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        if (singleInstance == nil) {
+            singleInstance = [[super alloc] init];
+            // init dateFormatter
+            [singleInstance createTimeFormatter];
+
+            [singleInstance catchCrash];
+            [singleInstance createLogPath];
+
+        }
+    });
+    return singleInstance;
+}
+
+- (void)createTimeFormatter {
+    self.dateFormatter = [[NSDateFormatter alloc] init];
+    [self.dateFormatter setDateFormat:@"yyyy-MM-dd"];
+
+    self.timeFormatter = [[NSDateFormatter alloc] init];
+    [self.timeFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+}
+
+- (void)catchCrash {
+    NSSetUncaughtExceptionHandler(&uncaughtExceptionHandler);
+}
+
+- (void)createLogPath {
+    NSString *documentsDirectory = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES)[0];
+    NSString *logDirectory = [documentsDirectory stringByAppendingString:@"/OCRichLog/log/"];
+    NSString *crashDirectory = [documentsDirectory stringByAppendingString:@"/OCRichLog/crash/"];
+
+    if (![[NSFileManager defaultManager] fileExistsAtPath:logDirectory])
+        [[NSFileManager defaultManager] createDirectoryAtPath:logDirectory withIntermediateDirectories:YES attributes:nil error:nil];
+    if (![[NSFileManager defaultManager] fileExistsAtPath:crashDirectory])
+        [[NSFileManager defaultManager] createDirectoryAtPath:crashDirectory withIntermediateDirectories:YES attributes:nil error:nil];
+
+    self.logDirectory = logDirectory;
+    self.crashDirectory = crashDirectory;
+}
+
+- (void)updateLogFile {
+    OCRichLog *instance = [OCRichLog shareInstance];
+    NSString *nowDay = [instance.dateFormatter stringFromDate:[NSDate date]];
+
+    // create new file for log
+    if (nil == instance.logFilePath || ![nowDay isEqualToString:instance.crateFileDay]) {
+        NSString *fileNamePrefix = [instance.dateFormatter stringFromDate:[NSDate date]];
+        instance.crateFileDay = fileNamePrefix;
+        NSString *fileName = [NSString stringWithFormat:@"Log_%@.logtraces.txt", fileNamePrefix];
+        NSString *filePath = [instance.logDirectory stringByAppendingPathComponent:fileName];
+
+        instance.logFilePath = filePath;
+
+        if (![[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
+            NSString *fileHead = [NSString stringWithFormat:@"App:%@, version:%@, build:%@ \n", [OCDevice appName], [OCDevice clientVersion], [OCDevice buildVersion]];
+            NSData *dataHead = [fileHead dataUsingEncoding:NSUTF8StringEncoding];
+            [[NSFileManager defaultManager] createFileAtPath:filePath contents:dataHead attributes:nil];
+        }
+    }
+}
+
+- (void)deleteExpiredLog {
+    OCRichLog *instance = [OCRichLog shareInstance];
+    NSDate *prevDate = [[NSDate date] dateByAddingTimeInterval:-60 * 60 * 24 * k_preDaysToDelLog];
+    NSDateComponents *components = [[NSCalendar currentCalendar] components:NSCalendarUnitYear | NSCalendarUnitMonth | NSCalendarUnitDay fromDate:prevDate];
+    [components setHour:0];
+    [components setMinute:0];
+    [components setSecond:0];
+    NSDate *delDate = [[NSCalendar currentCalendar] dateFromComponents:components];
+    NSArray *logFiles = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:instance.logDirectory error:nil];
+    for (NSString *file in logFiles) {
+        NSString *fileName = [file stringByReplacingOccurrencesOfString:@".logtraces.txt" withString:@""];
+        fileName = [fileName stringByReplacingOccurrencesOfString:@"Log_" withString:@""];
+        NSDate *fileDate = [instance.dateFormatter dateFromString:fileName];
+        if (nil == fileDate) {
+            continue;
+        }
+        if (NSOrderedAscending == [fileDate compare:delDate]) {
+            [[NSFileManager defaultManager] removeItemAtPath:[instance.logDirectory stringByAppendingString:file] error:nil];
+        }
+    }
+}
 
 + (NSString *)stringFromLogLevel:(OCRichLogLevel)logLevel {
     switch (logLevel) {
@@ -60,65 +146,8 @@ const int k_preDaysToDelLog = 3;
     return [NSString stringWithFormat:@"[%@] ", [OCRichLog stringFromLogLevel:logLevel]];
 }
 
-+ (void)logInitial {
-    
-    NSSetUncaughtExceptionHandler(&uncaughtExceptionHandler);
-    
-    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
-    [dateFormatter setDateFormat:@"yyyy-MM-dd"];
-    NSString *nowDay = [dateFormatter stringFromDate:[NSDate date]];
-    
-    // create path for log file
-    if (nil == logFilePath || ![nowDay isEqualToString:crateFileDay]) {
-        NSString *documentsDirectory = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES)[0];
-        NSString *logDirectory = [documentsDirectory stringByAppendingString:@"/OCRichLog/log/"];
-        NSString *crashDirectory = [documentsDirectory stringByAppendingString:@"/OCRichLog/crash/"];
-        //create directory if it doesn't exist
-        if (![[NSFileManager defaultManager] fileExistsAtPath:logDirectory])
-            [[NSFileManager defaultManager] createDirectoryAtPath:logDirectory withIntermediateDirectories:YES attributes:nil error:nil];
-        if (![[NSFileManager defaultManager] fileExistsAtPath:crashDirectory])
-            [[NSFileManager defaultManager] createDirectoryAtPath:crashDirectory withIntermediateDirectories:YES attributes:nil error:nil];
-        logDic = logDirectory;
-        crashDic = crashDirectory;
-        NSString *fileNamePrefix = [dateFormatter stringFromDate:[NSDate date]];
-        crateFileDay = fileNamePrefix;
-        NSString *fileName = [NSString stringWithFormat:@"OCRichLog_%@.logtraces.txt", fileNamePrefix];
-        NSString *filePath = [logDirectory stringByAppendingPathComponent:fileName];
-        
-        logFilePath = filePath;
-        
-        if (![[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
-            NSString *fileHead = [NSString stringWithFormat:@"App:%@, version:%@, build:%@ \n", [OCDevice appName], [OCDevice clientVersion], [OCDevice buildVersion]];
-            NSData *dataHead = [fileHead dataUsingEncoding:NSUTF8StringEncoding];
-            [[NSFileManager defaultManager] createFileAtPath:filePath contents:dataHead attributes:nil];
-        }
-        
-        //删除过期的日志
-        NSDate *prevDate = [[NSDate date] dateByAddingTimeInterval:-60 * 60 * 24 * k_preDaysToDelLog];
-        NSDateComponents *components = [[NSCalendar currentCalendar] components:NSCalendarUnitYear | NSCalendarUnitMonth | NSCalendarUnitDay fromDate:prevDate];
-        [components setHour:0];
-        [components setMinute:0];
-        [components setSecond:0];
-        
-        //删除三天以前的日志（0点开始）
-        NSDate *delDate = [[NSCalendar currentCalendar] dateFromComponents:components];
-        NSArray *logFiles = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:logDic error:nil];
-        for (NSString *file in logFiles) {
-            NSString *fileName = [file stringByReplacingOccurrencesOfString:@".logtraces.txt" withString:@""];
-            fileName = [fileName stringByReplacingOccurrencesOfString:@"OCRichLog_" withString:@""];
-            NSDate *fileDate = [dateFormatter dateFromString:fileName];
-            if (nil == fileDate) {
-                continue;
-            }
-            if (NSOrderedAscending == [fileDate compare:delDate]) {
-                [[NSFileManager defaultManager] removeItemAtPath:[logDic stringByAppendingString:file] error:nil];
-            }
-        }
-    }
-}
-
 + (void)setDebug:(BOOL)isDebug {
-    isDebugModel = isDebug;
+    [OCRichLog shareInstance].isDebugModel = isDebug;
 }
 
 + (void)setLogLevel:(OCRichLogLevel)level {
@@ -127,28 +156,21 @@ const int k_preDaysToDelLog = 3;
 
 + (void)logvLevel:(OCRichLogLevel)level Format:(NSString *)format VaList:(va_list)args {
     // only print in debug model
-    if(isDebugModel){
+    OCRichLog *instance = [OCRichLog shareInstance];
+    if (instance.isDebugModel) {
         [OCRichLog logInitial];
         if (level >= LogLevel) {
             format = [[OCRichLog logFormatPrefix:level] stringByAppendingString:format];
-            NSString *contentStr = nil;
+            NSString *contentString = nil;
             @try {
-                contentStr = [[NSString alloc] initWithFormat:format arguments:args];
+                contentString = [[NSString alloc] initWithFormat:format arguments:args];
             }
             @catch (NSException *e) {
-                contentStr = @"OCRichLog [logvLevel:ForMat:VaList] args Error!";
+                contentString = @"Log [logvLevel:ForMat:VaList] args Error!";
             }
-            NSString *contentN = [contentStr stringByAppendingString:@"\n"];
-            NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
-            [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
-            NSString *content = [NSString stringWithFormat:@"%@ %@", [dateFormatter stringFromDate:[NSDate date]], contentN];
-            NSFileHandle *file = [NSFileHandle fileHandleForUpdatingAtPath:logFilePath];
-            
-            if (file == nil) {
-                logFilePath = nil;
-                [OCRichLog logInitial];
-                file = [NSFileHandle fileHandleForUpdatingAtPath:logFilePath];
-            }
+
+            NSString *content = [NSString stringWithFormat:@"%@ %@ \n", [instance.timeFormatter stringFromDate:[NSDate date]], contentString];
+            NSFileHandle *file = [NSFileHandle fileHandleForUpdatingAtPath:instance.logFilePath];
             [file seekToEndOfFile];
             [file writeData:[content dataUsingEncoding:NSUTF8StringEncoding]];
             [file closeFile];
@@ -161,24 +183,17 @@ const int k_preDaysToDelLog = 3;
     if (nil == exception) {
         return;
     }
-    [OCRichLog logInitial];
-    if(isDebugModel){
+    OCRichLog *instance = [OCRichLog shareInstance];
+    if (instance.isDebugModel) {
         NSLog(@"CRASH: %@", exception);
         NSLog(@"Stack Trace: %@", [exception callStackSymbols]);
     }
     // Internal error reporting
-    NSString *fileName = [NSString stringWithFormat:@"OCRichLog_crash_%@.log", [[NSDate date] description]];
-    NSString *filePath = [crashDic stringByAppendingString:fileName];
+    NSString *fileName = [NSString stringWithFormat:@"Log_crash_%@.log", [instance.timeFormatter stringFromDate:[NSDate date]]];
+    NSString *filePath = [instance.crashDirectory stringByAppendingString:fileName];
     NSString *content = [[NSString stringWithFormat:@"CRASH: %@\n", exception] stringByAppendingString:[NSString stringWithFormat:@"Stack Trace: %@\n", [exception callStackSymbols]]];
     content = [content stringByAppendingString:[NSString stringWithFormat:@"iPhone:%@ ClientVersion:%@ OSVersion:%@", [OCDevice phoneModel], [OCDevice clientVersion], [OCDevice OSNumber]]];
     [content writeToFile:filePath atomically:YES encoding:NSUTF8StringEncoding error:nil];
-}
-
-+ (void)logLevel:(OCRichLogLevel)level LogInfo:(NSString *)format, ... {
-    va_list args;
-    va_start(args, format);
-    [OCRichLog logvLevel:level Format:format VaList:args];
-    va_end(args);
 }
 
 + (void)logV:(NSString *)format, ... {
