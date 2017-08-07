@@ -14,7 +14,7 @@ We can write all the log to a local file and then you can send it to the remote 
 
 How to use?
 ```
-    [OCLog logIntial];
+    [OCLog logInitial];
     OCLogV(@"Verbose model");
     OCLogI(@"Info model");
     OCLogD(@"Debug model");
