@@ -28,7 +28,7 @@
 
 + (NSString *)clientVersion {
     NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
-    return [infoDictionary objectForKey:@"CFBundleShortVersionString"];
+    return infoDictionary[@"CFBundleShortVersionString"];
 }
 
 + (NSString *)buildVersion {

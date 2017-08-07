@@ -37,7 +37,7 @@ void uncaughtExceptionHandler(NSException *exception);
 /**
 	@brief 初始化log模块并添加捕捉crash的callback
  */
-+ (void)logIntial;
++ (void)logInitial;
 
 /**
 	@brief 设置log模块模式，Debug or Release(默认debug模式)

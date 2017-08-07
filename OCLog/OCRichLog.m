@@ -60,7 +60,7 @@ const int k_preDaysToDelLog = 3;
     return [NSString stringWithFormat:@"[%@] ", [OCRichLog stringFromLogLevel:logLevel]];
 }
 
-+ (void)logIntial {
++ (void)logInitial {
     
     NSSetUncaughtExceptionHandler(&uncaughtExceptionHandler);
     
@@ -70,7 +70,7 @@ const int k_preDaysToDelLog = 3;
     
     // create path for log file
     if (nil == logFilePath || ![nowDay isEqualToString:crateFileDay]) {
-        NSString *documentsDirectory = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
+        NSString *documentsDirectory = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES)[0];
         NSString *logDirectory = [documentsDirectory stringByAppendingString:@"/OCRichLog/log/"];
         NSString *crashDirectory = [documentsDirectory stringByAppendingString:@"/OCRichLog/crash/"];
         //create directory if it doesn't exist
@@ -128,7 +128,7 @@ const int k_preDaysToDelLog = 3;
 + (void)logvLevel:(OCRichLogLevel)level Format:(NSString *)format VaList:(va_list)args {
     // only print in debug model
     if(isDebugModel){
-        [OCRichLog logIntial];
+        [OCRichLog logInitial];
         if (level >= LogLevel) {
             format = [[OCRichLog logFormatPrefix:level] stringByAppendingString:format];
             NSString *contentStr = nil;
@@ -146,7 +146,7 @@ const int k_preDaysToDelLog = 3;
             
             if (file == nil) {
                 logFilePath = nil;
-                [OCRichLog logIntial];
+                [OCRichLog logInitial];
                 file = [NSFileHandle fileHandleForUpdatingAtPath:logFilePath];
             }
             [file seekToEndOfFile];
@@ -161,7 +161,7 @@ const int k_preDaysToDelLog = 3;
     if (nil == exception) {
         return;
     }
-    [OCRichLog logIntial];
+    [OCRichLog logInitial];
     if(isDebugModel){
         NSLog(@"CRASH: %@", exception);
         NSLog(@"Stack Trace: %@", [exception callStackSymbols]);
