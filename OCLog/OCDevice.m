@@ -5,7 +5,6 @@
 
 #import "OCDevice.h"
 #include <sys/sysctl.h>
-#include <mach/mach.h>
 #import <UIKit/UIKit.h>
 
 @implementation OCDevice

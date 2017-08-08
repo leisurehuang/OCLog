@@ -13,14 +13,13 @@ We can write all the log to a local file and then you can send it to the remote 
 
 
 How to use?
-```
-    [OCLog logInitial];
-    OCLogV(@"Verbose model");
-    OCLogI(@"Info model");
-    OCLogD(@"Debug model");
-    OCLogW(@"Warning model");
-    OCLogE(@"Error model");
-```
+
+    [OCRichLog logInitial];  
+    OCRichLogV(@"this is a debug log");
+    OCRichLogD(@"this is a debug log");
+    OCRichLogI(@"this is a info log");
+    OCRichLogW(@"this is a warning log");
+    OCRichLogE(@"this is a error log");
 
 #Update:
 
@@ -34,8 +33,10 @@ How to use it?
   [checkThread start];
 ```
 
+2017/08/08:
+
+code refactor for log code and fix performance issues.
 
 
-   Enjoy.
-
-   Lei
+ Enjoy.  
+ Lei

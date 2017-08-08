@@ -8,7 +8,7 @@
 
 #import <Foundation/Foundation.h>
 
-//日志等级
+//log level
 typedef enum {
     LOGLEVELV = 0,
     LOGLEVELD = 1,
@@ -35,54 +35,54 @@ void uncaughtExceptionHandler(NSException *exception);
 @interface OCRichLog : NSObject
 
 /**
-	@brief 初始化log模块并添加捕捉crash的callback
+	@brief  init log and try to catch crash callback
  */
 + (void)logInitial;
 
 /**
-	@brief 设置log模块模式，Debug or Release(默认debug模式)
+	@brief set log model to Debug or Release(default is debug model)
  */
 + (void)setDebug:(BOOL)isDebug;
 
 /**
-	@brief 设置要记录的log级别(默认LOGLEVELD级别)
-	@param level 要设置的log级别
+	@brief set log level (default is LOGLEVELD)
+	@param level level
  */
 + (void)setLogLevel:(OCRichLogLevel)level;
 
 /**
-	@brief 记录系统crash的Log函数
-	@param exception 系统异常
+	@brief catch App crash
+	@param exception app exceptions
  */
 + (void)logCrash:(NSException *)exception;
 
 /**
-	@brief LOGLEVELV级Log记录函数
-	@param format 具体记录log的格式以及内容
+	@brief verbose log
+	@param format log content
  */
 + (void)logV:(NSString *)format, ... NS_FORMAT_FUNCTION(1, 2);
 
 /**
-	@brief LOGLEVELD级Log记录函数
-	@param format 具体记录log的格式以及内容
+	@brief debug log
+	@param format log content
  */
 + (void)logD:(NSString *)format, ... NS_FORMAT_FUNCTION(1, 2);
 
 /**
-	@brief LOGLEVELI级Log记录函数
-	@param format 具体记录log的格式以及内容
+	@brief info log
+	@param format log content
  */
 + (void)logI:(NSString *)format, ... NS_FORMAT_FUNCTION(1, 2);
 
 /**
-	@brief LOGLEVELW级Log记录函数
-	@param format 具体记录log的格式以及内容
+	@brief warning log
+	@param format log content
  */
 + (void)logW:(NSString *)format, ... NS_FORMAT_FUNCTION(1, 2);
 
 /**
-	@brief LOGLEVELE级Log记录函数
-	@param format 具体记录log的格式以及内容
+	@brief error log
+	@param format log content
  */
 + (void)logE:(NSString *)format, ... NS_FORMAT_FUNCTION(1, 2);
 

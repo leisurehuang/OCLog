@@ -7,9 +7,9 @@
 //
 
 #import <XCTest/XCTest.h>
+#import "OCRichLog.h"
 
 @interface OCLogTests : XCTestCase
-
 @end
 
 @implementation OCLogTests
@@ -27,6 +27,13 @@
 - (void)testExample {
     // This is an example of a functional test case.
     // Use XCTAssert and related functions to verify your tests produce the correct results.
+    [OCRichLog logInitial];
+    OCRichLogV(@"this is a debug log");
+    OCRichLogD(@"this is a debug log");
+    OCRichLogI(@"this is a info log");
+    OCRichLogW(@"this is a warning log");
+    OCRichLogE(@"this is a error log");
+
 }
 
 - (void)testPerformanceExample {
