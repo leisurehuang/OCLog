@@ -1,5 +1,8 @@
 
-# [OCLog](https://github.com/leisurehuang/OCLog) [![Build Status](https://travis-ci.org/leisurehuang/OCLog.svg?branch=master)](https://travis-ci.org/leisurehuang/OCLog)
+# [OCLog](https://github.com/leisurehuang/OCLog) 
+[![Build Status](https://travis-ci.org/leisurehuang/OCLog.svg?branch=master)](https://travis-ci.org/leisurehuang/OCLog)
+[![CocoaPods Compatible](https://img.shields.io/cocoapods/v/OCLog.svg)](https://img.shields.io/cocoapods/v/OCLog.svg)
+[![Platform](https://img.shields.io/cocoapods/p/OCLog.svg?style=flat)](http://cocoadocs.org/docsets/OCLog)
 
 a log system for iOS platform
 
