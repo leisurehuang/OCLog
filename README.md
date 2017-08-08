@@ -37,6 +37,10 @@ How to use it?
 
 code refactor for log code and fix performance issues.
 
+Also you can use CocoaPods to manage this lib, call
+
+    pod 'OCLog'
+
 
  Enjoy.  
  Lei

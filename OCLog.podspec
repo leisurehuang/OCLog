@@ -9,7 +9,7 @@
 Pod::Spec.new do |s|
 
   s.name         = "OCLog"
-  s.version      = "0.0.1"
+  s.version      = "0.0.2"
   s.summary      = "a log system for iOS platform"
   s.description  = <<-DESC
   We can easy to use this lib to print a log with more infos such as time, method name, lines and other detail.
